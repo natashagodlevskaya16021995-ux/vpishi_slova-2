@@ -119,7 +119,7 @@
       feedback.style.color = "#ff4d4f"; widget.classList.add('flash-red');
     } else {
       if (correctCount === wordGroups.length && correctCount > 0) {
-        feedback.innerText = "🎉 Ура! Все слова верны!"; feedback.style.color = "#24cf82"; widget.classList.add('flash-green');
+        feedback.innerText = "🎉 Ура! Всё верно!"; feedback.style.color = "#24cf82"; widget.classList.add('flash-green');
         if(useConfetti && typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, zIndex: 9999 });
         if(soundUrl) new Audio(soundUrl).play().catch(e => {});
       } else {
