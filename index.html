@@ -11,9 +11,9 @@
     .g-input { display:block; width:100%; padding:10px; margin-bottom:10px; border-radius:8px; font-family: inherit; box-sizing:border-box; outline:none; transition: border-color 0.3s; background: rgba(255,255,255,0.9); }
     #g-btn { width: 100%; padding: 12px; margin-top: 10px; color: #333; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: inherit; transition: opacity 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     #g-btn:hover { opacity: 0.8; }
-    @keyframes flashSuccess { 0% { background-color: rgba(33, 150, 243, 0.4); } 100% { background-color: var(--bg-color); } }
+    @keyframes flashSuccess { 0% { background-color: rgba(40, 207, 130, 0.4); } 100% { background-color: var(--bg-color); } }
     @keyframes flashError { 0% { background-color: rgba(255, 77, 79, 0.4); } 100% { background-color: var(--bg-color); } }
-    .flash-blue { animation: flashSuccess 0.8s ease-out; }
+    .flash-green { animation: flashSuccess 0.8s ease-out; }
     .flash-red { animation: flashError 0.8s ease-out; }
   </style>
 </head>
@@ -85,7 +85,7 @@
     let correctCount = 0; 
     let hasDuplicate = false;
 
-    widget.classList.remove('flash-blue', 'flash-red'); void widget.offsetWidth; 
+    widget.classList.remove('flash-green', 'flash-red'); void widget.offsetWidth; 
     inputs.forEach(input => input.style.borderColor = borderColor);
 
     inputs.forEach(input => {
@@ -107,7 +107,7 @@
           matchedGroups.add(foundGroupIndex);
           enteredValues.push(val);
           correctCount++;
-          input.style.borderColor = "#2196F3"; 
+          input.style.borderColor = "#24cf82"; 
         }
       } else {
         input.style.borderColor = "#ffa940"; 
@@ -119,7 +119,7 @@
       feedback.style.color = "#ff4d4f"; widget.classList.add('flash-red');
     } else {
       if (correctCount === wordGroups.length && correctCount > 0) {
-        feedback.innerText = "🎉 Ура! Все слова верны!"; feedback.style.color = "#2196F3"; widget.classList.add('flash-blue');
+        feedback.innerText = "🎉 Ура! Все слова верны!"; feedback.style.color = "#24cf82"; widget.classList.add('flash-green');
         if(useConfetti && typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, zIndex: 9999 });
         if(soundUrl) new Audio(soundUrl).play().catch(e => {});
       } else {
