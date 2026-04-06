@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Виджет Играй и Учи</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    body { margin: 0; padding: 10px; background: transparent; overflow: hidden; }
+    #g-widget { transition: background-color 0.3s; margin: 0 auto; box-sizing: border-box; max-width: 500px; }
+    .g-input { display:block; width:100%; padding:10px; margin-bottom:10px; border-radius:8px; font-family: inherit; box-sizing:border-box; outline:none; transition: border-color 0.3s; background: rgba(255,255,255,0.9); }
+    #g-btn { width: 100%; padding: 12px; margin-top: 10px; color: #333; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: inherit; transition: opacity 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    #g-btn:hover { opacity: 0.8; }
+    @keyframes flashSuccess { 0% { background-color: rgba(33, 150, 243, 0.4); } 100% { background-color: var(--bg-color); } }
+    @keyframes flashError { 0% { background-color: rgba(255, 77, 79, 0.4); } 100% { background-color: var(--bg-color); } }
+    .flash-blue { animation: flashSuccess 0.8s ease-out; }
+    .flash-red { animation: flashError 0.8s ease-out; }
+  </style>
+</head>
+<body>
+
+<div id="app-root"></div>
+
+<script>
+  let config = {};
+  try {
+    const hash = window.location.hash.substring(1);
+    if(hash) config = JSON.parse(decodeURIComponent(escape(atob(hash))));
+  } catch(e) { console.error("Ошибка", e); }
+
+  const title = config.title || "Впиши слова по памяти:";
+  const instruction = config.instruction || "";
+  const correctWords = config.words || ["яблоко", "груша", "банан"];
+  const count = config.count || 3;
+  const borderColor = config.borderColor || "#cccccc";
+  const btnColor = config.btnColor || "#ffc107";
+  const bgRgba = config.bgRgba || "rgba(255, 255, 255, 1)";
+  const fontFamily = config.font || "Montserrat";
+  const titleFontSize = config.titleFontSize || 20;
+  const inputFontSize = config.inputFontSize || 16;
+  const textColor = config.textColor || "#333333";
+  const useConfetti = config.confetti !== false;
+  const soundUrl = config.sound || "https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3";
+
+  const wordGroups = correctWords.map(w => w.split('|').map(v => v.trim().toLowerCase()));
+
+  if (fontFamily !== 'sans-serif') {
+    const fontLink = document.createElement('link');
+    fontLink.href = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(/ /g, '+')}:wght@400;700&display=swap`;
+    fontLink.rel = 'stylesheet';
+    document.head.appendChild(fontLink);
+  }
+
+  let inputsHTML = '';
+  for(let i = 0; i < count; i++) {
+    inputsHTML += `<input type="text" class="g-input" placeholder="Слово ${i+1}" style="border: 2px solid ${borderColor}; font-size: ${inputFontSize}px; color: ${textColor};">`;
+  }
+
+  document.documentElement.style.setProperty('--bg-color', bgRgba);
+  const styleTag = document.createElement('style');
+  styleTag.innerHTML = `.g-input::placeholder { color: ${textColor}; opacity: 0.5; }`;
+  document.head.appendChild(styleTag);
+
+  const instructionHtml = instruction ? `<p style="margin-top: 0; margin-bottom: 15px; text-align: center; font-size: calc(${inputFontSize}px * 0.85); opacity: 0.85;">${instruction}</p>` : '';
+
+  document.getElementById('app-root').innerHTML = `
+    <div id="g-widget" style="font-family: '${fontFamily}', sans-serif; color: ${textColor}; background: ${bgRgba}; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea;">
+      <h3 style="margin-top: 0; margin-bottom: ${instruction ? '5px' : '15px'}; text-align: center; font-size: ${titleFontSize}px; line-height: 1.2;">${title}</h3>
+      ${instructionHtml}
+      <div onkeydown="event.stopPropagation()" onkeyup="event.stopPropagation()" onkeypress="event.stopPropagation()">
+        ${inputsHTML}
+      </div>
+      <button id="g-btn" style="background: ${btnColor}; font-size: ${inputFontSize}px;">Проверить</button>
+      <div id="g-feedback" style="margin-top: 15px; font-weight: bold; text-align: center; min-height: calc(${inputFontSize}px * 1.5); font-size: ${inputFontSize}px;"></div>
+    </div>
+  `;
+
+  document.getElementById('g-btn').addEventListener('click', function() {
+    const widget = document.getElementById('g-widget');
+    const inputs = document.querySelectorAll('.g-input');
+    const feedback = document.getElementById('g-feedback');
+    
+    let enteredValues = []; 
+    let matchedGroups = new Set(); 
+    let correctCount = 0; 
+    let hasDuplicate = false;
+
+    widget.classList.remove('flash-blue', 'flash-red'); void widget.offsetWidth; 
+    inputs.forEach(input => input.style.borderColor = borderColor);
+
+    inputs.forEach(input => {
+      const val = input.value.toLowerCase().trim();
+      if (val === "") return;
+
+      let foundGroupIndex = -1;
+      for (let i = 0; i < wordGroups.length; i++) {
+        if (wordGroups[i].includes(val)) {
+          foundGroupIndex = i;
+          break;
+        }
+      }
+
+      if (foundGroupIndex !== -1) {
+        if (matchedGroups.has(foundGroupIndex)) {
+          input.style.borderColor = "#ff4d4f"; hasDuplicate = true;
+        } else {
+          matchedGroups.add(foundGroupIndex);
+          enteredValues.push(val);
+          correctCount++;
+          input.style.borderColor = "#2196F3"; 
+        }
+      } else {
+        input.style.borderColor = "#ffa940"; 
+      }
+    });
+
+    if (hasDuplicate) {
+      feedback.innerText = "❌ Ошибка: слова не должны повторяться!";
+      feedback.style.color = "#ff4d4f"; widget.classList.add('flash-red');
+    } else {
+      if (correctCount === wordGroups.length && correctCount > 0) {
+        feedback.innerText = "🎉 Ура! Все слова верны!"; feedback.style.color = "#2196F3"; widget.classList.add('flash-blue');
+        if(useConfetti && typeof confetti !== 'undefined') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, zIndex: 9999 });
+        if(soundUrl) new Audio(soundUrl).play().catch(e => {});
+      } else {
+        feedback.innerText = "Угадано: " + correctCount + " из " + wordGroups.length; feedback.style.color = textColor;
+      }
+    }
+  });
+</script>
+</body>
+</html>
